@@ -116,6 +116,7 @@ func (a *Argon2Generator) Validate(password string, hash string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
+
 	passwdHash := argon2.IDKey([]byte(password), salt, params.Iterations,
 		params.Memory, params.Parallelism, params.KeyLength)
 

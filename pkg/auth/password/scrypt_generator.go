@@ -65,7 +65,9 @@ func decodeScryptHash(encodedHash string) (param *SCryptParams, salt, hash []byt
 	}
 
 	p := &SCryptParams{}
-	_, err = fmt.Sscanf(vals[3], "m=%d,t=%d,p=%d", &p.Memory, &p.Iterations, &p.Parallelism)
+	_, err = fmt.Sscanf(vals[3], "m=%d,t=%d,p=%d", &p.Memory,
+		&p.Iterations, &p.Parallelism)
+
 	if err != nil {
 		return nil, nil, nil, err
 	}

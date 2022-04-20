@@ -13,6 +13,14 @@ func generateRandomBytes(n uint32) ([]byte, error) {
 }
 
 type PasswordGenerator interface {
-	Encrypt(password string) ([]byte, error)
-	Validate(password, hash []byte) (bool, error)
+	Encrypt(password string) (string, error)
+	Validate(password string, hash string) (bool, error)
+}
+
+func EncryptPassword(password string, generator PasswordGenerator) (string, error) {
+	return generator.Encrypt(password)
+}
+
+func ValidatePassword(password string, hash string, generator PasswordGenerator) (bool, error) {
+	return generator.Validate(password, hash)
 }

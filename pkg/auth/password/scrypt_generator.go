@@ -94,6 +94,9 @@ func (s *ScryptGenerator) Encrypt(password string) (string, error) {
 	hash, err := scrypt.Key([]byte(password), salt, scryptParams.Memory,
 		scryptParams.Iterations, scryptParams.Parallelism,
 		scryptParams.KeyLength)
+	if err != nil {
+		return "", err
+	}
 
 	b64Salt := base64.RawStdEncoding.EncodeToString(salt)
 	b64Hash := base64.RawStdEncoding.EncodeToString(hash)

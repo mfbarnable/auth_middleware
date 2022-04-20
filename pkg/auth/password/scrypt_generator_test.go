@@ -2,11 +2,11 @@ package password
 
 import "testing"
 
-func TestEncryptArgon(t *testing.T) {
+func TestEncryptScrypt(t *testing.T) {
 	var password string = "some_password"
 
-	argonGenerator := Argon2Generator{}
-	hash, err := argonGenerator.Encrypt(password)
+	scryptGenerator := ScryptGenerator{}
+	hash, err := scryptGenerator.Encrypt(password)
 	if err != nil {
 		t.Error(err)
 	}
@@ -14,15 +14,15 @@ func TestEncryptArgon(t *testing.T) {
 	t.Logf("Hashed password output %s", hash)
 }
 
-func TestDecodeHashArgon(t *testing.T) {
+func TestDecodeHashScrypt(t *testing.T) {
 	var password string = "some_password"
 
-	argonGenerator := Argon2Generator{}
-	hash, err := argonGenerator.Encrypt(password)
+	scryptGenerator := ScryptGenerator{}
+	hash, err := scryptGenerator.Encrypt(password)
 	if err != nil {
 		t.Error(err)
 	}
-	params, salt, outHash, err := decodeArgonHash(hash)
+	params, salt, outHash, err := decodeScryptHash(hash)
 	if err != nil {
 		t.Error(err)
 	}
@@ -40,16 +40,16 @@ func TestDecodeHashArgon(t *testing.T) {
 	}
 }
 
-func TestValidateArgon(t *testing.T) {
+func TestValidateScrypt(t *testing.T) {
 	var password string = "some_password"
 
-	argonGenerator := Argon2Generator{}
-	hash, err := argonGenerator.Encrypt(password)
+	scryptGenerator := ScryptGenerator{}
+	hash, err := scryptGenerator.Encrypt(password)
 	if err != nil {
 		t.Error(err)
 	}
 
-	pass, err := argonGenerator.Validate(password, hash)
+	pass, err := scryptGenerator.Validate(password, hash)
 	if err != nil {
 		t.Error(err)
 	}

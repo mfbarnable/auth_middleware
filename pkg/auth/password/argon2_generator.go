@@ -1,7 +1,6 @@
 package password
 
 import (
-	"crypto/rand"
 	"crypto/subtle"
 	"encoding/base64"
 	"errors"
@@ -21,7 +20,7 @@ var (
 	ErrIncompatibleVersion = errors.New("incompatible version of argon2")
 )
 
-const configFileName string = "argonParams.yaml"
+const argonConfigFileName string = "argonParams.yaml"
 
 type ArgonParams struct {
 	Memory      uint32 `yaml:"memory"`
@@ -41,7 +40,7 @@ func init() {
 	parent := filepath.Dir(wd)
 	parent = filepath.Dir(parent)
 	parent = filepath.Dir(parent)
-	paramFile := filepath.Join(parent, "config", configFileName)
+	paramFile := filepath.Join(parent, "config", argonConfigFileName)
 	content, err := ioutil.ReadFile(paramFile)
 	if err != nil {
 		log.Fatal(err)
@@ -53,16 +52,6 @@ func init() {
 }
 
 type Argon2Generator struct{}
-
-func generateRandomBytes(n uint32) ([]byte, error) {
-	b := make([]byte, n)
-	_, err := rand.Read(b)
-	if err != nil {
-		return nil, err
-	}
-
-	return b, nil
-}
 
 func decodeArgonHash(encodedHash string) (param *ArgonParams, salt, hash []byte, err error) {
 	vals := strings.Split(encodedHash, "$")
@@ -127,7 +116,6 @@ func (a *Argon2Generator) Validate(password string, hash string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	fmt.Println(salt)
 	passwdHash := argon2.IDKey([]byte(password), salt, params.Iterations,
 		params.Memory, params.Parallelism, params.KeyLength)
 

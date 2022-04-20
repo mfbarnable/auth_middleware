@@ -2,14 +2,23 @@ package password
 
 import (
 	"crypto/rand"
+	"crypto/subtle"
+	"encoding/base64"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"golang.org/x/crypto/argon2"
 	"gopkg.in/yaml.v3"
+)
+
+var (
+	ErrInvalidHash         = errors.New("the encoded hash is not in the correct format")
+	ErrIncompatibleVersion = errors.New("incompatible version of argon2")
 )
 
 const configFileName string = "argonParams.yaml"
@@ -33,7 +42,6 @@ func init() {
 	parent = filepath.Dir(parent)
 	parent = filepath.Dir(parent)
 	paramFile := filepath.Join(parent, "config", configFileName)
-	fmt.Println(paramFile)
 	content, err := ioutil.ReadFile(paramFile)
 	if err != nil {
 		log.Fatal(err)
@@ -56,26 +64,76 @@ func generateRandomBytes(n uint32) ([]byte, error) {
 	return b, nil
 }
 
-func (a *Argon2Generator) Encrypt(password string) ([]byte, error) {
+func decodeArgonHash(encodedHash string) (param *ArgonParams, salt, hash []byte, err error) {
+	vals := strings.Split(encodedHash, "$")
+	if len(vals) != 6 {
+		return nil, nil, nil, ErrInvalidHash
+	}
+
+	var version int
+	_, err = fmt.Sscanf(vals[2], "v=%d", &version)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	if version != argon2.Version {
+		return nil, nil, nil, ErrIncompatibleVersion
+	}
+
+	p := &ArgonParams{}
+	_, err = fmt.Sscanf(vals[3], "m=%d,t=%d,p=%d", &p.Memory, &p.Iterations, &p.Parallelism)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	salt, err = base64.RawStdEncoding.Strict().DecodeString(vals[4])
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	p.SaltLength = uint32(len(salt))
+
+	hash, err = base64.RawStdEncoding.Strict().DecodeString(vals[5])
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	p.KeyLength = uint32(len(hash))
+
+	return p, salt, hash, nil
+}
+
+func (a *Argon2Generator) Encrypt(password string) (string, error) {
 	salt, err := generateRandomBytes(argonParams.SaltLength)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
-	fmt.Println(argonParams.Iterations)
 	hash := argon2.IDKey([]byte(password),
 		salt,
 		argonParams.Iterations,
 		argonParams.Memory,
 		argonParams.Parallelism,
 		argonParams.KeyLength)
+	// Base64 encode the salt and hashed password.
+	b64Salt := base64.RawStdEncoding.EncodeToString(salt)
+	b64Hash := base64.RawStdEncoding.EncodeToString(hash)
 
-	return hash, nil
+	encodedHash := fmt.Sprintf("$argon2id$v=%d$m=%d,t=%d,p=%d$%s$%s",
+		argon2.Version, argonParams.Memory, argonParams.Iterations,
+		argonParams.Parallelism, b64Salt, b64Hash)
+
+	return encodedHash, nil
 }
 
-func (a *Argon2Generator) Decrypt(hashedPassword string) string {
-	panic("not implemented") // TODO: Implement
-}
+func (a *Argon2Generator) Validate(password string, hash string) (bool, error) {
+	params, salt, hashed, err := decodeArgonHash(hash)
+	if err != nil {
+		return false, err
+	}
+	fmt.Println(salt)
+	passwdHash := argon2.IDKey([]byte(password), salt, params.Iterations,
+		params.Memory, params.Parallelism, params.KeyLength)
 
-func (a *Argon2Generator) Validate(inHashed string, outHashed string) (bool, error) {
-	panic("not implemented") // TODO: Implement
+	if subtle.ConstantTimeCompare(hashed, passwdHash) == 1 {
+		return true, nil
+	}
+
+	return false, nil
 }

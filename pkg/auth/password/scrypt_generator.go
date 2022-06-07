@@ -104,8 +104,8 @@ func (s *ScryptGenerator) Encrypt(password string) (string, error) {
 	b64Hash := base64.RawStdEncoding.EncodeToString(hash)
 
 	encodedHash := fmt.Sprintf("$scrypt$v=%d$m=%d,t=%d,p=%d$%s$%s",
-		scryptVerion, argonParams.Memory, argonParams.Iterations,
-		argonParams.Parallelism, b64Salt, b64Hash)
+		scryptVerion, scryptParams.Memory, scryptParams.Iterations,
+		scryptParams.Parallelism, b64Salt, b64Hash)
 
 	return encodedHash, nil
 }

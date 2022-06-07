@@ -28,7 +28,7 @@ func TestDecodeHashScrypt(t *testing.T) {
 	}
 
 	if params == nil {
-		t.Error("Error: argon parameters are empty")
+		t.Error("Error: scrypt parameters are empty")
 	}
 
 	if salt == nil {
